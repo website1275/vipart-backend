@@ -5,7 +5,6 @@ import multer from "multer";
 import cors from "cors";
 import { Resend } from "resend";
 import admin from "firebase-admin";
-import fs from "fs";
 
 // ---------------- INIT ----------------
 dotenv.config();
@@ -17,11 +16,7 @@ app.use(express.json());
 // ---------------- RESEND ----------------
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-
-const serviceAccount = JSON.parse(
-  fs.readFileSync("./serviceAccountKey.json", "utf-8")
-);
-
+const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
 
 // ---------------- FIREBASE ADMIN ----------------
 admin.initializeApp({
@@ -163,6 +158,7 @@ app.post("/upload", upload.array("files", 10), async (req, res) => {
 
 // ---------------- START SERVER ----------------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`Server running on http://localhost:${PORT}`)
-);
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
