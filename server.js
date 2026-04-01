@@ -51,6 +51,10 @@ function generateCode() {
 
 // ---------------- ROUTES ----------------
 
+app.get("/", (req, res) => {
+  res.send("API is running");
+});
+
 // ✅ Send verification code
 app.post("/send-verification", async (req, res) => {
   const { email, userId } = req.body;
@@ -90,6 +94,7 @@ app.post("/send-verification", async (req, res) => {
 app.post("/verify-code", async (req, res) => {
   const { userId, code } = req.body;
 
+
   try {
     const docRef = db.collection("verificationCodes").doc(userId);
     const docSnap = await docRef.get();
@@ -109,9 +114,9 @@ app.post("/verify-code", async (req, res) => {
     }
 
     // Mark user as verified
-    await db.collection("users").doc(userId).update({
-      verified: true,
-    });
+    await db.collection("users").doc(userId).set({
+  verified: true,
+}, { merge: true });
 
     // Delete used code
     await docRef.delete();
