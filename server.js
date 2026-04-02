@@ -16,7 +16,16 @@ app.use(express.json());
 // ---------------- RESEND ----------------
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
+console.log("FIREBASE_KEY:", process.env.FIREBASE_KEY ? "EXISTS" : "MISSING");
+
+let serviceAccount;
+
+try {
+  serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
+  console.log("FIREBASE JSON OK");
+} catch (e) {
+  console.log("FIREBASE JSON ERROR:", e.message);
+}
 
 // ---------------- FIREBASE ADMIN ----------------
 admin.initializeApp({
