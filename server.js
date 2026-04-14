@@ -5,14 +5,21 @@ import multer from "multer";
 import cors from "cors";
 import { Resend } from "resend";
 import admin from "firebase-admin";
+import rateLimit from "express-rate-limit";
 
 // ---------------- INIT ----------------
 dotenv.config();
+
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+const verificationLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5,
+});
 // ---------------- RESEND ----------------
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -53,6 +60,18 @@ function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+
+function adminMiddleware(req, res, next) {
+  const secret = req.headers["x-admin-secret"];
+
+  if (!secret || secret !== ADMIN_SECRET) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  next();
+}
+
+
 // ---------------- ROUTES ----------------
 
 app.get("/", (req, res) => {
@@ -60,7 +79,7 @@ app.get("/", (req, res) => {
 });
 
 // ✅ Send verification code
-app.post("/send-verification", async (req, res) => {
+app.post("/send-verification", verificationLimiter, async (req, res) => {
   const { email, userId } = req.body;
 
   try {
@@ -79,6 +98,10 @@ app.post("/send-verification", async (req, res) => {
       to: email,
       subject: "Your verification code",
       html: `
+          <div style="text-align:center;">
+         <img src="https://vipart.ge/logo4-512.png" width="120" />
+         </div>
+
         <h2>VIPart Verification</h2>
         <p>Your code:</p>
         <h1>${code}</h1>
@@ -168,7 +191,7 @@ app.post("/upload", upload.array("files", 10), async (req, res) => {
 
 
 // ✅ Send marketing email (ads / listings)
-app.post("/send-marketing", async (req, res) => {
+app.post("/send-marketing", adminMiddleware, async (req, res) => {
   const { subject, html } = req.body;
 if (!subject || !html) {
   return res.status(400).json({ error: "Missing subject or html" });
@@ -183,7 +206,7 @@ if (!subject || !html) {
 
     const emails = usersSnap.docs
   .map(doc => doc.data().email)
-  .filter(email => !!email);
+  .filter(email => typeof email === "string" && email.includes("@"));
 
     if (emails.length === 0) {
       return res.json({ success: true, message: "No users to send" });
@@ -196,11 +219,17 @@ if (!subject || !html) {
   const batch = emails.slice(i, i + BATCH_SIZE);
 
   await resend.emails.send({
-    from: "VIPart <news@vipart.ge>",
+    from: "VIPart Real Estate <news@vipart.ge>",
     to: batch,
     subject,
     html: `
-      ${html}
+    <div style="text-align:center;">
+    <img src="https://vipart.ge/logo4-512.png" width="120" />
+    </div>
+
+
+     ${html}
+
       <br/><br/>
       <p style="font-size:12px;color:gray;">
         If you no longer want to receive emails, contact us to unsubscribe.
