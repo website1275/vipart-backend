@@ -200,19 +200,12 @@ if (!subject || !html) {
 
   try {
     // 🔒 Only send to users who agreed to marketing
-    let emails = [];
+let emails = [];
 
-if (sendToAll) {
-  const usersSnap = await db.collection("users")
-    .where("marketingConsent", "==", true)
-    .get();
-
-  emails = usersSnap.docs
-    .map(doc => doc.data().email)
-    .filter(email => typeof email === "string" && email.includes("@"));
-
-} else if (Array.isArray(toEmails) && toEmails.length > 0) {
-  emails = toEmails.filter(email => typeof email === "string" && email.includes("@"));
+if (Array.isArray(toEmails) && toEmails.length > 0) {
+  emails = toEmails.filter(email =>
+    typeof email === "string" && email.includes("@")
+  );
 }
 
     if (emails.length === 0) {
