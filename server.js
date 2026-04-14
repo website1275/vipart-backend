@@ -165,6 +165,59 @@ app.post("/upload", upload.array("files", 10), async (req, res) => {
   }
 });
 
+
+
+// ✅ Send marketing email (ads / listings)
+app.post("/send-marketing", async (req, res) => {
+  const { subject, html } = req.body;
+if (!subject || !html) {
+  return res.status(400).json({ error: "Missing subject or html" });
+}
+
+
+  try {
+    // 🔒 Only send to users who agreed to marketing
+    const usersSnap = await db.collection("users")
+      .where("marketingConsent", "==", true)
+      .get();
+
+    const emails = usersSnap.docs
+  .map(doc => doc.data().email)
+  .filter(email => !!email);
+
+    if (emails.length === 0) {
+      return res.json({ success: true, message: "No users to send" });
+    }
+
+    // 🚀 Send emails (batch)
+    const BATCH_SIZE = 20;
+
+ for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+  const batch = emails.slice(i, i + BATCH_SIZE);
+
+  await resend.emails.send({
+    from: "VIPart <news@vipart.ge>",
+    to: batch,
+    subject,
+    html: `
+      ${html}
+      <br/><br/>
+      <p style="font-size:12px;color:gray;">
+        If you no longer want to receive emails, contact us to unsubscribe.
+      </p>
+    `,
+  });
+}
+
+    res.json({ success: true, sentTo: emails.length });
+
+  } catch (err) {
+    console.error("Marketing email error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // ---------------- START SERVER ----------------
 const PORT = process.env.PORT || 3000;
 
