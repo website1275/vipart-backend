@@ -192,7 +192,7 @@ app.post("/upload", upload.array("files", 10), async (req, res) => {
 
 // ✅ Send marketing email (ads / listings)
 app.post("/send-marketing", adminMiddleware, async (req, res) => {
-  const { subject, html } = req.body;
+  const { subject, html, toEmails, sendToAll } = req.body;
 if (!subject || !html) {
   return res.status(400).json({ error: "Missing subject or html" });
 }
@@ -200,13 +200,20 @@ if (!subject || !html) {
 
   try {
     // 🔒 Only send to users who agreed to marketing
-    const usersSnap = await db.collection("users")
-      .where("marketingConsent", "==", true)
-      .get();
+    let emails = [];
 
-    const emails = usersSnap.docs
-  .map(doc => doc.data().email)
-  .filter(email => typeof email === "string" && email.includes("@"));
+if (sendToAll) {
+  const usersSnap = await db.collection("users")
+    .where("marketingConsent", "==", true)
+    .get();
+
+  emails = usersSnap.docs
+    .map(doc => doc.data().email)
+    .filter(email => typeof email === "string" && email.includes("@"));
+
+} else if (Array.isArray(toEmails) && toEmails.length > 0) {
+  emails = toEmails.filter(email => typeof email === "string" && email.includes("@"));
+}
 
     if (emails.length === 0) {
       return res.json({ success: true, message: "No users to send" });
