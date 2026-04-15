@@ -6,15 +6,22 @@ import cors from "cors";
 import { Resend } from "resend";
 import admin from "firebase-admin";
 import rateLimit from "express-rate-limit";
+import crypto from "crypto";
 
 // ---------------- INIT ----------------
 dotenv.config();
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
+const RESEND_WEBHOOK_SECRET = process.env.RESEND_WEBHOOK_SECRET;
+
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 
 const verificationLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
@@ -69,6 +76,20 @@ function adminMiddleware(req, res, next) {
   }
 
   next();
+}
+
+
+function verifyResendSignature(req) {
+  const signature = req.headers["resend-signature"];
+
+  if (!signature || !RESEND_WEBHOOK_SECRET) return false;
+
+  const computed = crypto
+    .createHmac("sha256", RESEND_WEBHOOK_SECRET)
+    .update(req.rawBody)
+    .digest("hex");
+
+  return computed === signature;
 }
 
 
@@ -249,7 +270,13 @@ if (Array.isArray(toEmails) && toEmails.length > 0) {
 
 app.post("/inbound-email", async (req, res) => {
   try {
-    console.log("📩 INBOUND EMAIL:", req.body);
+
+    // ✅ VERIFY REQUEST COMES FROM RESEND
+    if (!verifyResendSignature(req)) {
+      return res.status(401).send("Invalid signature");
+    }
+
+    console.log("📩 VERIFIED INBOUND EMAIL:", req.body);
 
     const event = req.body;
 
@@ -268,11 +295,14 @@ app.post("/inbound-email", async (req, res) => {
     }
 
     res.status(200).send("ok");
+
   } catch (err) {
     console.error("Inbound email error:", err);
     res.status(500).send("error");
   }
 });
+
+
 
 
 
