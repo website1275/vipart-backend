@@ -189,7 +189,6 @@ app.post("/upload", upload.array("files", 10), async (req, res) => {
 });
 
 
-
 // ✅ Send marketing email (ads / listings)
 app.post("/send-marketing", adminMiddleware, async (req, res) => {
   const { subject, html, toEmails, sendToAll } = req.body;
@@ -245,6 +244,31 @@ if (Array.isArray(toEmails) && toEmails.length > 0) {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+
+app.post("/inbound-email", async (req, res) => {
+  try {
+    console.log("📩 INBOUND EMAIL:", req.body);
+
+    const email = req.body;
+
+    await db.collection("emails").add({
+      from: email.from,
+      to: email.to,
+      subject: email.subject,
+      text: email.text,
+      html: email.html,
+      createdAt: Date.now()
+    });
+
+    res.status(200).send("ok");
+  } catch (err) {
+    console.error("Inbound email error:", err);
+    res.status(500).send("error");
+  }
+});
+
 
 
 // ---------------- START SERVER ----------------
