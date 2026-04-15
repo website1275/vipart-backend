@@ -251,16 +251,21 @@ app.post("/inbound-email", async (req, res) => {
   try {
     console.log("📩 INBOUND EMAIL:", req.body);
 
-    const email = req.body;
+    const event = req.body;
 
-    await db.collection("emails").add({
-      from: email.from,
-      to: email.to,
-      subject: email.subject,
-      text: email.text,
-      html: email.html,
-      createdAt: Date.now()
-    });
+    if (event.type === "email.received") {
+      const email = event.data;
+
+      await db.collection("emails").add({
+        from: email.from || "",
+        to: email.to || [],
+        subject: email.subject || "",
+        text: email.text || "",
+        html: email.html || "",
+        createdAt: Date.now(),
+        read: false
+      });
+    }
 
     res.status(200).send("ok");
   } catch (err) {
