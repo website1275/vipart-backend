@@ -67,6 +67,17 @@ function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function getTrialEndDate(createdAt) {
+  const date = new Date(createdAt || Date.now());
+  date.setDate(date.getDate() + 90); // 3 months trial
+  return date.getTime();
+}
+
+
+function canPost(user) {
+  return Date.now() < user.trialEndAt;
+}
+
 
 function adminMiddleware(req, res, next) {
   const secret = req.headers["x-admin-secret"];
@@ -302,6 +313,41 @@ app.post("/inbound-email", async (req, res) => {
   }
 });
 
+
+
+
+app.post("/migrate-trials", adminMiddleware, async (req, res) => {
+  try {
+    const usersRef = db.collection("users");
+    const snapshot = await usersRef.get();
+
+    const batch = db.batch();
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+
+      if (!data.trialEndAt) {
+        const createdAt = data.createdAt || Date.now();
+        const trialEndAt = getTrialEndDate(createdAt);
+
+        batch.update(doc.ref, {
+          trialStartAt: createdAt,
+          trialEndAt,
+          plan: "gift_trial",
+          canPostListings: true
+        });
+      }
+    });
+
+    await batch.commit();
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 
