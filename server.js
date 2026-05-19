@@ -15,6 +15,9 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
 const RESEND_WEBHOOK_SECRET = process.env.RESEND_WEBHOOK_SECRET;
 
+const bogPublicKey = process.env.BOG_PUBLIC_KEY;
+const bogSecretKey = process.env.BOG_SECRET_KEY;
+
 const app = express();
 app.use(cors());
 app.use(express.json({
