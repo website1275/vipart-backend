@@ -360,6 +360,9 @@ app.post("/create-payment", async (req, res) => {
 
     const { type } = req.body;
 
+const fakeUserId = "TEST_USER_ID";
+
+
     let amount = 0;
 
     if (type === "limitless") {
@@ -378,6 +381,29 @@ app.post("/create-payment", async (req, res) => {
 
     console.log("PAYMENT TYPE:", type);
     console.log("AMOUNT:", amount);
+
+
+
+
+if (type === "limitless") {
+
+  await db.collection("users").doc(fakeUserId).set({
+    plan: "limitless",
+    limitlessUntil: Date.now() + 30 * 24 * 60 * 60 * 1000,
+  }, { merge: true });
+
+}
+
+if (type === "extra_listing") {
+
+  await db.collection("users").doc(fakeUserId).set({
+    extraListings: admin.firestore.FieldValue.increment(1),
+  }, { merge: true });
+
+}
+
+
+
 
     // temporary fake payment url
     res.json({
