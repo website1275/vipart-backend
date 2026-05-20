@@ -355,6 +355,28 @@ app.post("/migrate-trials", adminMiddleware, async (req, res) => {
 
 
 
+app.post("/create-payment", async (req, res) => {
+  try {
+
+    console.log("PAYMENT REQUEST:", req.body);
+
+    // temporary fake payment url
+    res.json({
+      paymentUrl: "https://example.com"
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+
+
 // ---------------- START SERVER ----------------
 const PORT = process.env.PORT || 3000;
 
