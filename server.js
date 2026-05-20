@@ -358,18 +358,38 @@ app.post("/migrate-trials", adminMiddleware, async (req, res) => {
 app.post("/create-payment", async (req, res) => {
   try {
 
-    console.log("PAYMENT REQUEST:", req.body);
+    const { type } = req.body;
+
+    let amount = 0;
+
+    if (type === "limitless") {
+      amount = 25;
+    }
+
+    else if (type === "extra_listing") {
+      amount = 3;
+    }
+
+    else {
+      return res.status(400).json({
+        error: "Invalid payment type",
+      });
+    }
+
+    console.log("PAYMENT TYPE:", type);
+    console.log("AMOUNT:", amount);
 
     // temporary fake payment url
     res.json({
-      paymentUrl: "https://example.com"
+      paymentUrl: "https://example.com",
     });
 
   } catch (err) {
+
     console.error(err);
 
     res.status(500).json({
-      error: err.message
+      error: err.message,
     });
   }
 });
