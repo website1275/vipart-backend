@@ -354,25 +354,20 @@ app.post("/migrate-trials", adminMiddleware, async (req, res) => {
 
 
 
-
 app.post("/create-payment", async (req, res) => {
   try {
+    const { type, userId } = req.body;
 
-    const { type } = req.body;
-
-const fakeUserId = "TEST_USER_ID";
-
+    if (!userId) {
+      return res.status(400).json({
+        error: "Missing userId",
+      });
+    }
 
     let amount = 0;
 
-    if (type === "limitless") {
-      amount = 25;
-    }
-
-    else if (type === "extra_listing") {
-      amount = 3;
-    }
-
+    if (type === "limitless") amount = 25;
+    else if (type === "extra_listing") amount = 3;
     else {
       return res.status(400).json({
         error: "Invalid payment type",
@@ -380,43 +375,40 @@ const fakeUserId = "TEST_USER_ID";
     }
 
     console.log("PAYMENT TYPE:", type);
+    console.log("USER ID:", userId);
     console.log("AMOUNT:", amount);
 
+    // =========================
+    // TEMP TEST LOGIC (NO BOG YET)
+    // =========================
 
+    if (type === "limitless") {
+      await db.collection("users").doc(userId).set(
+        {
+          plan: "limitless",
+          limitlessUntil: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        },
+        { merge: true }
+      );
+    }
 
+    if (type === "extra_listing") {
+      await db.collection("users").doc(userId).set(
+        {
+          extraListings: admin.firestore.FieldValue.increment(1),
+        },
+        { merge: true }
+      );
+    }
 
-if (type === "limitless") {
-
-  await db.collection("users").doc(fakeUserId).set({
-    plan: "limitless",
-    limitlessUntil: Date.now() + 30 * 24 * 60 * 60 * 1000,
-  }, { merge: true });
-
-}
-
-if (type === "extra_listing") {
-
-  await db.collection("users").doc(fakeUserId).set({
-    extraListings: admin.firestore.FieldValue.increment(1),
-  }, { merge: true });
-
-}
-
-
-
-
-    // temporary fake payment url
+    // fake redirect for now
     res.json({
       paymentUrl: "https://example.com",
     });
 
   } catch (err) {
-
     console.error(err);
-
-    res.status(500).json({
-      error: err.message,
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
