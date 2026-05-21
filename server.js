@@ -367,7 +367,18 @@ app.post("/create-payment", async (req, res) => {
     let amount = 0;
 
     if (type === "limitless") amount = 25;
-    else if (type === "extra_listing") amount = 3;
+  else if (type === "extra_listing") amount = 3;
+  else if (type === "vip") {
+  const vipDays = Number(req.body.vipDays || 1);
+
+  if (vipDays < 1 || vipDays > 365) {
+    return res.status(400).json({
+      error: "Invalid vipDays",
+    });
+  }
+
+  amount = vipDays; // 1 GEL = 1 day
+}
     else {
       return res.status(400).json({
         error: "Invalid payment type",
