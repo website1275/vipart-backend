@@ -370,14 +370,43 @@ app.post("/create-payment", async (req, res) => {
   else if (type === "extra_listing") amount = 3;
   else if (type === "vip") {
   const vipDays = Number(req.body.vipDays || 1);
+  const listingId = req.body.listingId;
 
-  if (vipDays < 1 || vipDays > 365) {
-    return res.status(400).json({
-      error: "Invalid vipDays",
-    });
+  if (!listingId) {
+    return res.status(400).json({ error: "Missing listingId" });
   }
 
-  amount = vipDays; // 1 GEL = 1 day
+  if (vipDays < 1 || vipDays > 365) {
+    return res.status(400).json({ error: "Invalid vipDays" });
+  }
+
+  const listingRef = db.collection("listings").doc(listingId);
+  const listingSnap = await listingRef.get();
+
+  if (!listingSnap.exists) {
+    return res.status(404).json({ error: "Listing not found" });
+  }
+
+  const data = listingSnap.data();
+
+  const currentVipUntil = data.vipUntil || 0;
+
+  const baseTime =
+    currentVipUntil > Date.now()
+      ? currentVipUntil
+      : Date.now();
+
+  const vipDuration = vipDays * 24 * 60 * 60 * 1000;
+
+  await listingRef.set(
+    {
+      vipUntil: baseTime + vipDuration,
+      isVip: true,
+    },
+    { merge: true }
+  );
+
+  amount = vipDays;
 }
     else {
       return res.status(400).json({
