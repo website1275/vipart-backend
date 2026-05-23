@@ -358,27 +358,35 @@ app.post("/create-payment", async (req, res) => {
   try {
     const { type, userId } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({
-        error: "Missing userId",
-      });
-    }
+if (!userId || typeof userId !== "string") {
+  return res.status(400).json({ error: "Invalid userId" });
+}
+
+if (!type || typeof type !== "string") {
+  return res.status(400).json({ error: "Invalid type" });
+}
+
+const orderId = db.collection("pendingPayments").doc().id;
+
 
     let amount = 0;
 
     if (type === "limitless") amount = 25;
   else if (type === "extra_listing") amount = 3;
-  else if (type === "vip") {
-  const vipDays = Number(req.body.vipDays || 1);
+  else if (type === "vip" || type === "gold" || type === "extra_gold") {
+  const days = Number(req.body.days);
+
+if (!Number.isFinite(days) || days < 1 || days > 365) {
+  return res.status(400).json({ error: "Invalid days" });
+}
+
   const listingId = req.body.listingId;
 
   if (!listingId) {
     return res.status(400).json({ error: "Missing listingId" });
   }
 
-  if (vipDays < 1 || vipDays > 365) {
-    return res.status(400).json({ error: "Invalid vipDays" });
-  }
+
 
   const listingRef = db.collection("listings").doc(listingId);
   const listingSnap = await listingRef.get();
@@ -387,59 +395,67 @@ app.post("/create-payment", async (req, res) => {
     return res.status(404).json({ error: "Listing not found" });
   }
 
-  const data = listingSnap.data();
 
-  const currentVipUntil = data.vipUntil || 0;
+  const baseTime = Date.now();
 
-  const baseTime =
-    currentVipUntil > Date.now()
-      ? currentVipUntil
-      : Date.now();
+  const duration = days * 24 * 60 * 60 * 1000;
+  const newUntil = baseTime + duration;
 
-  const vipDuration = vipDays * 24 * 60 * 60 * 1000;
+let updateData = null;
 
-  await listingRef.set(
-    {
-      vipUntil: baseTime + vipDuration,
-      isVip: true,
-    },
-    { merge: true }
-  );
-
-  amount = vipDays;
+if (type === "extra_gold") {
+  amount = 2.9 * days;
+  updateData = {
+    extraGoldUntil: newUntil,
+    boostLevel: 3,
+    isExtraGold: true,
+    isGold: true,
+    isVip: true,
+  };
 }
+
+else if (type === "gold") {
+  amount = 2 * days;
+  updateData = {
+    goldUntil: newUntil,
+    boostLevel: 2,
+    isGold: true,
+    isVip: true,
+  };
+}
+
+else if (type === "vip") {
+  amount = 1 * days;
+  updateData = {
+    vipUntil: newUntil,
+    boostLevel: 1,
+    isVip: true,
+  };
+}
+
+
     else {
       return res.status(400).json({
         error: "Invalid payment type",
       });
     }
+}
+await db.collection("pendingPayments").doc(orderId).set({
+  orderId,
+  userId,
+  type,
+  listingId: req.body.listingId || null,
+  days: Number(req.body.days || 1),
+  amount,
+  status: "pending",
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
 
     console.log("PAYMENT TYPE:", type);
     console.log("USER ID:", userId);
     console.log("AMOUNT:", amount);
 
-    // =========================
-    // TEMP TEST LOGIC (NO BOG YET)
-    // =========================
-
-    if (type === "limitless") {
-      await db.collection("users").doc(userId).set(
-        {
-          plan: "limitless",
-          limitlessUntil: Date.now() + 30 * 24 * 60 * 60 * 1000,
-        },
-        { merge: true }
-      );
-    }
-
-    if (type === "extra_listing") {
-      await db.collection("users").doc(userId).set(
-        {
-          extraListings: admin.firestore.FieldValue.increment(1),
-        },
-        { merge: true }
-      );
-    }
 
     // fake redirect for now
     res.json({
