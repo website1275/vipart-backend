@@ -433,6 +433,9 @@ else if (type === "vip") {
   };
 }
 
+if (updateData) {
+  await listingRef.set(updateData, { merge: true });
+}
 
     else {
       return res.status(400).json({
