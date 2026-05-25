@@ -72,10 +72,9 @@ function generateCode() {
 
 function getTrialEndDate(createdAt) {
   const date = new Date(createdAt || Date.now());
-  date.setMinutes(date.getMinutes() + 10); // 3 months trial
+  date.setDate(date.getDate() + 30);
   return date.getTime();
 }
-
 
 function canPost(user) {
   return Date.now() < user.trialEndAt;
