@@ -19,7 +19,11 @@ const bogPublicKey = process.env.BOG_PUBLIC_KEY;
 const bogSecretKey = process.env.BOG_SECRET_KEY;
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://vipart.ge",
+  ],
+}));
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf.toString();
