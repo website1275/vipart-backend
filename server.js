@@ -30,6 +30,14 @@ const verificationLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
   max: 5,
 });
+
+
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+});
+
+
 // ---------------- RESEND ----------------
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -63,7 +71,12 @@ const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
 // ---------------- MULTER ----------------
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+});
 
 // ---------------- UTIL ----------------
 function generateCode() {
@@ -191,7 +204,11 @@ app.post("/verify-code", async (req, res) => {
 });
 
 // ✅ Upload images to S3
-app.post("/upload", upload.array("files", 10), async (req, res) => {
+app.post(
+  "/upload",
+  uploadLimiter,
+  upload.array("files", 10),
+  async (req, res) => {
   console.log("FILES RECEIVED:", req.files);
 
   try {
@@ -199,11 +216,25 @@ app.post("/upload", upload.array("files", 10), async (req, res) => {
       return res.status(400).json({ error: "No files uploaded" });
     }
 
+const allowedTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
+
+for (const file of req.files) {
+  if (!allowedTypes.includes(file.mimetype)) {
+    return res.status(400).json({
+      error: "Invalid file type",
+    });
+  }
+}
+
     const uploadResults = await Promise.all(
       req.files.map(async (file) => {
         const params = {
           Bucket: BUCKET_NAME,
-          Key: `${Date.now()}_${file.originalname}`,
+          Key: `${crypto.randomUUID()}_${Date.now()}`,
           Body: file.buffer,
           ContentType: file.mimetype,
         };
@@ -430,10 +461,6 @@ else if (type === "vip") {
     boostLevel: 1,
     isVip: true,
   };
-}
-
-if (updateData) {
-  await listingRef.set(updateData, { merge: true });
 }
 
     else {
