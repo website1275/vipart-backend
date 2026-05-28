@@ -392,6 +392,35 @@ app.post("/create-payment", async (req, res) => {
   try {
     const { type, userId } = req.body;
 
+
+
+
+async function getBogToken() {
+  const response = await fetch(
+    "https://oauth2.bog.ge/auth/realms/bog/protocol/openid-connect/token",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: bogPublicKey,
+        client_secret: bogSecretKey,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  return data.access_token;
+}
+
+
+
+
+
 if (!userId || typeof userId !== "string") {
   return res.status(400).json({ error: "Invalid userId" });
 }
@@ -491,9 +520,55 @@ await db.collection("pendingPayments").doc(orderId).set({
 
 
     // fake redirect for now
-    res.json({
-      paymentUrl: "https://example.com",
-    });
+    const token = await getBogToken();
+
+const paymentRes = await fetch(
+  "https://api.bog.ge/payments/v1/ecommerce/orders",
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      callback_url:
+        "https://vipart-backend.onrender.com/payment-callback",
+
+      external_order_id: orderId,
+
+      purchase_units: {
+        currency: "GEL",
+        total_amount: amount,
+      },
+
+      redirect_urls: {
+        success:
+          "https://vipart.ge/payment-success",
+        fail:
+          "https://vipart.ge/payment-fail",
+      },
+
+      basket: [
+        {
+          product_id: type,
+          description: type,
+          quantity: 1,
+          unit_price: amount,
+        },
+      ],
+    }),
+  }
+);
+
+const paymentData = await paymentRes.json();
+
+console.log(paymentData);
+
+res.json({
+  paymentUrl:
+    paymentData?._links?.redirect?.href,
+});
 
   } catch (err) {
     console.error(err);
