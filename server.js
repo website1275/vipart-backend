@@ -561,6 +561,11 @@ const paymentRes = await fetch(
   }
 );
 
+
+console.log("BOG RAW STATUS:", paymentRes.status);
+console.log("BOG RAW RESPONSE TEXT:", await paymentRes.clone().text());
+
+
 const paymentData = await paymentRes.json();
 
 console.log(paymentData);
