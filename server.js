@@ -522,6 +522,39 @@ await db.collection("pendingPayments").doc(orderId).set({
     // fake redirect for now
     const token = await getBogToken();
 
+const bogBody = {
+  callback_url:
+    "https://vipart-backend.onrender.com/payment-callback",
+
+  external_order_id: orderId,
+
+  purchase_units: {
+    currency: "GEL",
+    total_amount: amount,
+  },
+
+  redirect_urls: {
+    success: "https://vipart.ge/payment-success",
+    fail: "https://vipart.ge/payment-fail",
+  },
+
+  basket: [
+    {
+      product_id: type,
+      description: type,
+      quantity: 1,
+      unit_price: amount,
+    },
+  ],
+};
+
+console.log(
+  "BOG REQUEST BODY:",
+  JSON.stringify(bogBody, null, 2)
+);
+
+
+
 const paymentRes = await fetch(
   "https://api.bog.ge/payments/v1/ecommerce/orders",
   {
@@ -531,33 +564,7 @@ const paymentRes = await fetch(
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({
-      callback_url:
-        "https://vipart-backend.onrender.com/payment-callback",
-
-      external_order_id: orderId,
-
-      purchase_units: {
-        currency: "GEL",
-        total_amount: amount,
-      },
-
-      redirect_urls: {
-        success:
-          "https://vipart.ge/payment-success",
-        fail:
-          "https://vipart.ge/payment-fail",
-      },
-
-      basket: [
-        {
-          product_id: type,
-          description: type,
-          quantity: 1,
-          unit_price: amount,
-        },
-      ],
-    }),
+    body: JSON.stringify(bogBody),
   }
 );
 
