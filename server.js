@@ -582,7 +582,17 @@ res.json({
 });
 
 
+app.post("/payment-callback", async (req, res) => {
+  try {
+    console.log("BOG CALLBACK RECEIVED:");
+    console.log(JSON.stringify(req.body, null, 2));
 
+    res.status(200).send("OK");
+  } catch (err) {
+    console.error("Callback error:", err);
+    res.status(500).send("Error");
+  }
+});
 
 // ---------------- START SERVER ----------------
 const PORT = process.env.PORT || 3000;
