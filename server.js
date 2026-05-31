@@ -528,24 +528,24 @@ const bogBody = {
 
   external_order_id: orderId,
 
-  purchase_units: {
-    currency: "GEL",
-    total_amount: amount,
-  },
-
   redirect_urls: {
     success: "https://vipart.ge/payment-success",
     fail: "https://vipart.ge/payment-fail",
   },
 
-  basket: [
-    {
-      product_id: type,
-      description: type,
-      quantity: 1,
-      unit_price: amount,
-    },
-  ],
+  purchase_units: {
+    currency: "GEL",
+    total_amount: amount,
+    items: [
+      {
+        external_item_id: type,
+        description: type,
+        quantity: "1",
+        unit_price: amount,
+        total_price: amount,
+      },
+    ],
+  },
 };
 
 console.log(
