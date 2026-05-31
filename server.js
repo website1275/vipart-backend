@@ -538,16 +538,18 @@ const bogBody = {
   purchase_units: {
     currency: "GEL",
     total_amount: amount,
-    items: [
-      {
-        external_item_id: type,
-        description: type,
-        quantity: "1",
-        unit_price: amount,
-        total_price: amount,
-      },
-    ],
   },
+
+  basket: [
+    {
+      product_id: type,
+      description: type,
+      quantity: 1,
+      unit_price: amount,
+      vat: 0,
+      total_price: amount,
+    },
+  ],
 };
 
 console.log(
