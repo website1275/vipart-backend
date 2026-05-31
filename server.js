@@ -522,6 +522,8 @@ await db.collection("pendingPayments").doc(orderId).set({
     // fake redirect for now
     const token = await getBogToken();
 
+console.log("BOG VERSION 3");
+
 const bogBody = {
   callback_url:
     "https://vipart-backend.onrender.com/payment-callback",
