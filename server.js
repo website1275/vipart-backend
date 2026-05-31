@@ -556,8 +556,6 @@ console.log(
   JSON.stringify(bogBody, null, 2)
 );
 
-
-
 const paymentRes = await fetch(
   "https://api.bog.ge/payments/v1/ecommerce/orders",
   {
@@ -566,6 +564,9 @@ const paymentRes = await fetch(
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       Accept: "application/json",
+
+      // ✅ ADD THIS HERE
+      "Accept-Language": "en",
     },
     body: JSON.stringify(bogBody),
   }
