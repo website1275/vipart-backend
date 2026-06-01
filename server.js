@@ -598,6 +598,11 @@ app.post("/payment-callback", async (req, res) => {
     console.log("BOG CALLBACK RECEIVED:");
     console.log(JSON.stringify(req.body, null, 2));
 
+  console.log(
+      "CALLBACK FULL BODY:",
+      JSON.stringify(req.body, null, 2)
+    );
+
     res.status(200).send("OK");
   } catch (err) {
     console.error("Callback error:", err);
