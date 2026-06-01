@@ -452,11 +452,21 @@ if (!Number.isFinite(days) || days < 1 || days > 365) {
 
 
   const listingRef = db.collection("listings").doc(listingId);
-  const listingSnap = await listingRef.get();
+const listingSnap = await listingRef.get();
 
-  if (!listingSnap.exists) {
-    return res.status(404).json({ error: "Listing not found" });
-  }
+if (!listingSnap.exists) {
+  return res.status(404).json({
+    error: "Listing not found",
+  });
+}
+
+const listingData = listingSnap.data();
+
+if (listingData.userId !== userId) {
+  return res.status(403).json({
+    error: "Listing does not belong to user",
+  });
+}
 
 
   const baseTime = Date.now();
@@ -579,9 +589,20 @@ console.log("BOG RAW RESPONSE TEXT:", await paymentRes.clone().text());
 
 const paymentData = await paymentRes.json();
 
+console.log(
+  "BOG RESPONSE:",
+  JSON.stringify(paymentData, null, 2)
+);
+
 console.log(paymentData);
 
-res.json({
+if (!paymentRes.ok) {
+  return res.status(paymentRes.status).json({
+    error: paymentData,
+  });
+}
+
+return res.json({
   paymentUrl:
     paymentData?._links?.redirect?.href,
 });
