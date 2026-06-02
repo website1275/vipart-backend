@@ -616,18 +616,108 @@ return res.json({
 
 app.post("/payment-callback", async (req, res) => {
   try {
-    console.log("BOG CALLBACK RECEIVED:");
-    console.log(JSON.stringify(req.body, null, 2));
 
-  console.log(
+    console.log(
       "CALLBACK FULL BODY:",
       JSON.stringify(req.body, null, 2)
     );
 
-    res.status(200).send("OK");
+    const payment = req.body.body;
+
+    if (!payment) {
+      return res.status(400).send("Missing body");
+    }
+
+    const orderId = payment.external_order_id;
+
+    const status =
+      payment.order_status?.key;
+
+    if (status !== "completed") {
+      return res.status(200).send("Ignored");
+    }
+
+    const paymentDoc = await db
+      .collection("pendingPayments")
+      .doc(orderId)
+      .get();
+
+    if (!paymentDoc.exists) {
+      console.log(
+        "Pending payment not found:",
+        orderId
+      );
+
+      return res.status(404).send("Not found");
+    }
+
+    const paymentData = paymentDoc.data();
+
+    const {
+      type,
+      listingId,
+      days,
+    } = paymentData;
+
+    const now = Date.now();
+
+    const until =
+      now +
+      Number(days) *
+        24 *
+        60 *
+        60 *
+        1000;
+
+    const listingRef =
+      db.collection("listings").doc(listingId);
+
+    let updateData = {
+      status: "published",
+    };
+
+    if (type === "vip") {
+      updateData = {
+        ...updateData,
+        vipUntil: until,
+      };
+    }
+
+    if (type === "gold") {
+      updateData = {
+        ...updateData,
+        goldUntil: until,
+        vipUntil: until,
+      };
+    }
+
+    if (type === "extra_gold") {
+      updateData = {
+        ...updateData,
+        extraGoldUntil: until,
+        goldUntil: until,
+        vipUntil: until,
+      };
+    }
+
+    await listingRef.update(updateData);
+
+    await paymentDoc.ref.update({
+      status: "completed",
+      paidAt: now,
+    });
+
+    console.log(
+      "Listing upgraded:",
+      listingId
+    );
+
+    return res.status(200).send("OK");
+
   } catch (err) {
-    console.error("Callback error:", err);
-    res.status(500).send("Error");
+    console.error(err);
+
+    return res.status(500).send("Error");
   }
 });
 
