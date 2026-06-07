@@ -659,6 +659,53 @@ app.post("/payment-callback", async (req, res) => {
       days,
     } = paymentData;
 
+if (type === "limitless") {
+
+  const userRef =
+    db.collection("users").doc(paymentData.userId);
+
+  const MONTH_MS =
+    30 * 24 * 60 * 60 * 1000;
+
+  await userRef.update({
+    plan: "limitless",
+    monthlyPostCount: 0,
+    monthlyPostResetAt: Date.now() + MONTH_MS,
+  });
+
+  await paymentDoc.ref.update({
+    status: "completed",
+    paidAt: Date.now(),
+  });
+
+  return res.status(200).send("OK");
+}
+
+if (type === "extra_listing") {
+
+  await db
+    .collection("listings")
+    .doc(listingId)
+    .update({
+      status: "published",
+    });
+
+  await db
+    .collection("users")
+    .doc(paymentData.userId)
+    .update({
+      monthlyPostCount:
+        admin.firestore.FieldValue.increment(1),
+    });
+
+  await paymentDoc.ref.update({
+    status: "completed",
+    paidAt: Date.now(),
+  });
+
+  return res.status(200).send("OK");
+}
+
     const now = Date.now();
 
     const until =
