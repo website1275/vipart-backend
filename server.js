@@ -653,6 +653,10 @@ app.post("/payment-callback", async (req, res) => {
 
     const paymentData = paymentDoc.data();
 
+if (paymentData.status === "completed") {
+  return res.status(200).send("Already processed");
+}
+
     const {
       type,
       listingId,
@@ -683,25 +687,27 @@ if (type === "limitless") {
 
 if (type === "extra_listing") {
 
-  await db
-    .collection("listings")
-    .doc(listingId)
-    .update({
-      status: "published",
-    });
+  const listingRef = db.collection("listings").doc(listingId);
 
-  await db
-    .collection("users")
-    .doc(paymentData.userId)
-    .update({
-      monthlyPostCount:
-        admin.firestore.FieldValue.increment(1),
-    });
+  const userRef = db.collection("users").doc(paymentData.userId);
 
-  await paymentDoc.ref.update({
+  const batch = db.batch();
+
+  batch.update(listingRef, {
+    status: "published",
+    publishedAt: Date.now(),
+  });
+
+  batch.update(userRef, {
+    monthlyPostCount: admin.firestore.FieldValue.increment(1),
+  });
+
+  batch.update(paymentDoc.ref, {
     status: "completed",
     paidAt: Date.now(),
   });
+
+  await batch.commit();
 
   return res.status(200).send("OK");
 }
