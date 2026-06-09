@@ -671,11 +671,14 @@ if (type === "limitless") {
   const MONTH_MS =
     30 * 24 * 60 * 60 * 1000;
 
-  await userRef.update({
-    plan: "limitless",
-    monthlyPostCount: 0,
-    monthlyPostResetAt: Date.now() + MONTH_MS,
-  });
+  const until = Date.now() + MONTH_MS;
+
+await userRef.update({
+  plan: "limitless",
+  limitlessUntil: until,
+  monthlyPostCount: 0,
+  monthlyPostResetAt: until,
+});
 
   await paymentDoc.ref.update({
     status: "completed",
@@ -687,29 +690,25 @@ if (type === "limitless") {
 
 if (type === "extra_listing") {
 
-  const listingRef = db.collection("listings").doc(listingId);
+    const userRef =
+        db.collection("users").doc(paymentData.userId);
 
-  const userRef = db.collection("users").doc(paymentData.userId);
+    await userRef.update({
 
-  const batch = db.batch();
+        extraListingCredits:
+            admin.firestore.FieldValue.increment(1)
 
-  batch.update(listingRef, {
-    status: "published",
-    publishedAt: Date.now(),
-  });
+    });
 
-  batch.update(userRef, {
-    monthlyPostCount: admin.firestore.FieldValue.increment(1),
-  });
+    await paymentDoc.ref.update({
 
-  batch.update(paymentDoc.ref, {
-    status: "completed",
-    paidAt: Date.now(),
-  });
+        status:"completed",
+        paidAt:Date.now()
 
-  await batch.commit();
+    });
 
-  return res.status(200).send("OK");
+    return res.status(200).send("OK");
+
 }
 
     const now = Date.now();
