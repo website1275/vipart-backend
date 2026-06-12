@@ -511,7 +511,7 @@ else if (type === "vip") {
         error: "Invalid payment type",
       });
     }
-}
+
 await db.collection("pendingPayments").doc(orderId).set({
   orderId,
   userId,
