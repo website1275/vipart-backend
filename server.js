@@ -507,11 +507,12 @@ else if (type === "vip") {
 }
 
     else {
-      return res.status(400).json({
-        error: "Invalid payment type",
-      });
-    }
+  return res.status(400).json({
+    error: "Invalid payment type",
+  });
+}
 
+// 👇 THIS MUST BE INSIDE THE SAME TRY BLOCK
 await db.collection("pendingPayments").doc(orderId).set({
   orderId,
   userId,
