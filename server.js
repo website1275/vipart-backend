@@ -512,6 +512,8 @@ else if (type === "vip") {
   });
 }
 
+
+
 // 👇 THIS MUST BE INSIDE THE SAME TRY BLOCK
 await db.collection("pendingPayments").doc(orderId).set({
   orderId,
@@ -524,6 +526,8 @@ await db.collection("pendingPayments").doc(orderId).set({
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });
+
+}
 
     console.log("PAYMENT TYPE:", type);
     console.log("USER ID:", userId);
