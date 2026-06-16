@@ -695,25 +695,19 @@ await userRef.update({
 
 if (type === "extra_listing") {
 
-    const userRef =
-        db.collection("users").doc(paymentData.userId);
+    const listingRef =
+        db.collection("listings").doc(paymentData.listingId);
 
-    await userRef.update({
-
-        extraListingCredits:
-            admin.firestore.FieldValue.increment(1)
-
+    await listingRef.update({
+        status: "published",
     });
 
     await paymentDoc.ref.update({
-
-        status:"completed",
-        paidAt:Date.now()
-
+        status: "completed",
+        paidAt: Date.now(),
     });
 
     return res.status(200).send("OK");
-
 }
 
     const now = Date.now();
