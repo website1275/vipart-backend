@@ -397,7 +397,8 @@ const listingId = req.body.listingId;
 const isListingPayment =
   type === "vip" ||
   type === "gold" ||
-  type === "extra_gold";
+  type === "extra_gold" ||
+  type === "extra_listing";
 
 
 async function getBogToken() {
