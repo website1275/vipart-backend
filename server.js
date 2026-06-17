@@ -392,7 +392,12 @@ app.post("/create-payment", async (req, res) => {
   try {
     const { type, userId } = req.body;
 
+const listingId = req.body.listingId;
 
+const isListingPayment =
+  type === "vip" ||
+  type === "gold" ||
+  type === "extra_gold";
 
 
 async function getBogToken() {
@@ -546,9 +551,14 @@ const bogBody = {
   external_order_id: orderId,
 
   redirect_urls: {
-    success: "https://vipart.ge/payment-success",
-    fail: "https://vipart.ge/payment-fail",
-  },
+  success: isListingPayment
+    ? `https://vipart.ge/payment-success?listingId=${listingId || ""}`
+    : "https://vipart.ge/payment-success",
+
+  fail: isListingPayment
+    ? `https://vipart.ge/payment-fail?listingId=${listingId || ""}`
+    : "https://vipart.ge/payment-fail",
+},
 
   purchase_units: {
     currency: "GEL",
