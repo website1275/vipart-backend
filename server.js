@@ -552,13 +552,15 @@ const bogBody = {
   external_order_id: orderId,
 
   redirect_urls: {
-  success: isListingPayment
-    ? `https://vipart.ge/payment-success?listingId=${listingId || ""}`
-    : "https://vipart.ge/payment-success",
+  success:
+    `https://vipart.ge/payment-success?type=${type}${
+      listingId ? `&listingId=${listingId}` : ""
+    }`,
 
-  fail: isListingPayment
-    ? `https://vipart.ge/payment-fail?listingId=${listingId || ""}`
-    : "https://vipart.ge/payment-fail",
+  fail:
+    `https://vipart.ge/payment-fail?type=${type}${
+      listingId ? `&listingId=${listingId}` : ""
+    }`,
 },
 
   purchase_units: {
