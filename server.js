@@ -398,8 +398,8 @@ const isListingPayment =
   type === "vip" ||
   type === "gold" ||
   type === "extra_gold" ||
-  type === "extra_listing";
-
+  type === "extra_listing" ||
+  (type === "limitless" && !!listingId);
 
 async function getBogToken() {
   const response = await fetch(
