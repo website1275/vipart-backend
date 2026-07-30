@@ -89,7 +89,7 @@ function generateCode() {
 
 function getTrialEndDate(createdAt) {
   const date = new Date(createdAt || Date.now());
-  date.setDate(date.getDate() + 30);
+  date.setDate(date.getDate() + 14);
   return date.getTime();
 }
 
